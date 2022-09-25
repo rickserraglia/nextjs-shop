@@ -5,22 +5,29 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 import Stripe from 'stripe';
+import { formatCurrencyString, useShoppingCart } from 'use-shopping-cart';
 
 import { stripe } from '../../lib/stripe';
-import { ImageContainer, ProductContainer, ProductDetailsContainer } from '../../styles/pages/product';
+import {
+	ImageContainer,
+	ProductContainer,
+	ProductDetailsContainer
+} from '../../styles/pages/product';
 
 interface ProductProps {
 	product: {
 		id: string;
 		name: string;
 		imageUrl: string;
-		price: string;
+		price: number;
 		description: string;
 		defaultPriceId: string;
 	};
 }
 
 const Product = ({ product }: ProductProps) => {
+	const { clearCart, addItem } = useShoppingCart();
+
 	const [isCreatingCheckoutSession, setIsCreatingCheckoutSession] =
 		useState(false);
 	const { isFallback } = useRouter();
@@ -34,7 +41,7 @@ const Product = ({ product }: ProductProps) => {
 			setIsCreatingCheckoutSession(true);
 
 			const response = await axios.post('/api/checkout', {
-				priceId: product.defaultPriceId
+				products: [{ price: product.defaultPriceId, quantity: 1 }]
 			});
 
 			const { checkoutUrl } = response.data;
@@ -57,16 +64,38 @@ const Product = ({ product }: ProductProps) => {
 				</ImageContainer>
 				<ProductDetailsContainer>
 					<h1>{product.name}</h1>
-					<span>{product.price}</span>
+					<span>
+						{formatCurrencyString({
+							value: product.price,
+							currency: 'BRL'
+						})}
+					</span>
 
 					<p>{product.description}</p>
 
-					<button
-						disabled={isCreatingCheckoutSession}
-						onClick={handleBuyProduct}
-					>
-						Comprar agora
-					</button>
+					<footer>
+						<button
+							disabled={isCreatingCheckoutSession}
+							onClick={handleBuyProduct}
+						>
+							Comprar agora
+						</button>
+
+						<button
+							onClick={() =>
+								addItem({
+									name: product.name,
+									description: product.description,
+									id: product.id,
+									price: product.price,
+									currency: 'USD',
+									image: product.imageUrl
+								})
+							}
+						>
+							Adicionar ao Carrinho
+						</button>
+					</footer>
 				</ProductDetailsContainer>
 			</ProductContainer>
 		</>
@@ -102,10 +131,7 @@ export const getStaticProps: GetStaticProps<Object, { id: string }> = async ({
 				id: product.id,
 				name: product.name,
 				imageUrl: product.images[0],
-				price: new Intl.NumberFormat('pt-BR', {
-					style: 'currency',
-					currency: 'BRL'
-				}).format(Number(price.unit_amount) / 100),
+				price: price.unit_amount,
 				description: product.description,
 				defaultPriceId: price.id
 			}

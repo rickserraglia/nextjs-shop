@@ -1,12 +1,15 @@
-import { stripe } from '../lib/stripe';
-import { HomeContainer, Product, SliderDots } from '../styles/pages/home';
 import { useKeenSlider } from 'keen-slider/react';
 import { GetStaticProps } from 'next';
 import Image from 'next/future/image';
 import Head from 'next/head';
 import Link from 'next/link';
+import { Handbag } from 'phosphor-react';
 import { useState } from 'react';
 import Stripe from 'stripe';
+import { formatCurrencyString, useShoppingCart } from 'use-shopping-cart';
+
+import { stripe } from '../lib/stripe';
+import { HomeContainer, Product, SliderDots } from '../styles/pages/home';
 
 import 'keen-slider/keen-slider.min.css';
 
@@ -15,7 +18,8 @@ interface HomeProps {
 		id: string;
 		name: string;
 		imageUrl: string;
-		price: string;
+		price: number;
+		priceId: string;
 	}[];
 }
 
@@ -37,6 +41,8 @@ const Home = ({ products }: HomeProps) => {
 		loop: true
 	});
 
+	const { addItem } = useShoppingCart();
+
 	return (
 		<>
 			<Head>
@@ -45,19 +51,39 @@ const Home = ({ products }: HomeProps) => {
 			<HomeContainer ref={sliderRef} className="keen-slider">
 				{products.map((product) => {
 					return (
-						<Link
-							href={`/products/${product.id}`}
-							key={product.id}
-							prefetch={false}
-						>
-							<Product className="keen-slider__slide">
+						<Product className="keen-slider__slide" key={product.id}>
+							<Link href={`/products/${product.id}`} prefetch={false}>
 								<Image src={product.imageUrl} width={520} height={480} alt="" />
-								<footer>
-									<strong>{product.name}</strong>
-									<span>{product.price}</span>
-								</footer>
-							</Product>
-						</Link>
+							</Link>
+							<footer>
+								<Link href={`/products/${product.id}`} prefetch={false}>
+									<div>
+										<strong>{product.name}</strong>
+										<span>
+											{formatCurrencyString({
+												value: Number(product.price),
+												currency: 'BRL'
+											})}
+										</span>
+									</div>
+								</Link>
+								<button
+									onClick={() =>
+										addItem({
+											name: product.name,
+											description: 'random description',
+											id: product.id,
+											price: product.price,
+											price_id: product.priceId,
+											currency: 'USD',
+											image: product.imageUrl
+										})
+									}
+								>
+									<Handbag size={26} weight="bold" />
+								</button>
+							</footer>
+						</Product>
 					);
 				})}
 			</HomeContainer>
@@ -96,10 +122,8 @@ export const getStaticProps: GetStaticProps = async () => {
 			id: product.id,
 			name: product.name,
 			imageUrl: product.images[0],
-			price: new Intl.NumberFormat('pt-BR', {
-				style: 'currency',
-				currency: 'BRL'
-			}).format(Number(price.unit_amount) / 100)
+			price: price.unit_amount,
+			priceId: product.default_price!.id
 		};
 	});
 

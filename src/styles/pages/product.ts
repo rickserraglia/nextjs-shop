@@ -50,20 +50,27 @@ export const ProductDetailsContainer = styled('div', {
 		color: '$gray300'
 	},
 
-	button: {
+	footer: {
 		marginTop: 'auto',
-		backgroundColor: '$green500',
-		border: 0,
-		color: '$white',
-		borderRadius: 8,
-		padding: '1.25rem',
-		cursor: 'pointer',
-		fontWeight: 'bold',
-		fontSize: '$md',
-		transition: 'background-color 0.2s',
+		display: 'flex',
+		flexDirection: 'column',
+		gap: 8,
 
-		'&:hover': {
-			backgroundColor: '$green300'
+		button: {
+			marginTop: 'auto',
+			backgroundColor: '$green500',
+			border: 0,
+			color: '$white',
+			borderRadius: 8,
+			padding: '1.25rem',
+			cursor: 'pointer',
+			fontWeight: 'bold',
+			fontSize: '$md',
+			transition: 'background-color 0.2s',
+
+			'&:hover': {
+				backgroundColor: '$green300'
+			}
 		}
 	}
 });
